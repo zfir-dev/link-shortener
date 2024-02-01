@@ -45,7 +45,6 @@ document
   });
 
 function copyLink(shortId) {
-  // shortId to location.href
   const link = location.href + shortId;
   const el = document.createElement("textarea");
   el.value = link;
