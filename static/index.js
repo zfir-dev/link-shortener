@@ -32,11 +32,11 @@ document
     const ogDescription = document.getElementById("ogDescription").value;
     const ogImage = document.getElementById("ogImage").value;
 
-    // Post data to the Flask shorten route
     axios
       .post("/shorten", { url, ogTitle, ogDescription, ogImage })
       .then(function (response) {
         alert("URL shortened: " + response.data.shortId);
+        location.reload();
       })
       .catch(function (error) {
         console.error("Error shortening URL:", error);
