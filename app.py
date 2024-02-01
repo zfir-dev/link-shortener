@@ -47,6 +47,8 @@ def shorten_url():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     
+from flask import request
+
 @app.route('/<short_id>', methods=['GET'])
 def redirect_short_url(short_id):
     try:
@@ -57,6 +59,9 @@ def redirect_short_url(short_id):
                 return 'Shortened URL not found', 404
 
             original_url, og_title, og_description, og_image = result
+
+            cur.execute("UPDATE links SET clicks = clicks + 1 WHERE short_id = %s", (short_id,))
+            conn.commit()
 
             html_response = f"""
                 <html>
