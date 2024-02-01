@@ -44,6 +44,17 @@ document
       });
   });
 
+function copyLink(shortId) {
+  const link = location.href + shortId;
+  const el = document.createElement("textarea");
+  el.value = link;
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand("copy");
+  document.body.removeChild(el);
+  alert("Shorten link copied to clipboard");
+}
+
 function deleteLink(shortId) {
   axios
     .delete(`/delete/${shortId}`)

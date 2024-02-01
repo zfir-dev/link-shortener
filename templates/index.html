@@ -40,20 +40,22 @@
           <th>Short URL</th>
           <th>Original URL</th>
           <th>Clicks</th>
-          <th>Action</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         {% for link in links %}
         <tr id="link-{{ link[1] }}">
           <td>
-            <a href="{{ url_for('redirect_short_url', short_id=link[1]) }}"
+            <a
+              href="{{ url_for('redirect_short_url', short_id=link[1]) }}"
+              target="_blank"
               >{{ link[1] }}</a
             >
           </td>
           <td>{{ link[2] }}</td>
           <td>{{ link[6] }}</td>
-          <td><button onclick="deleteLink('{{ link[1] }}')">Delete</button></td>
+          <td><button onclick="copyLink('{{ link[1] }}')">Copy</button><button onclick="deleteLink('{{ link[1] }}')">Delete</button></td>
         </tr>
         {% endfor %}
       </tbody>
