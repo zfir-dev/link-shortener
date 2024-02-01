@@ -127,5 +127,5 @@ def index():
     return render_template('password.html')
 
 if __name__ == '__main__':
-    app.run(port=os.environ.get("PORT", 3000))
+    app.run(host='0.0.0.0', port=os.environ.get("PORT", 3000))
 
