@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Link Shortener</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="/static/styles.css">
+    <link rel="stylesheet" type="text/css" href="/static/styles.css" />
   </head>
   <body>
     <h1>Link Shortener</h1>
@@ -39,11 +39,13 @@
         <tr>
           <th>Short URL</th>
           <th>Original URL</th>
+          <th>Clicks</th>
           <th>Action</th>
         </tr>
       </thead>
       <tbody>
         {% for link in links %}
+        <p>{{link}}</p>
         <tr id="link-{{ link[1] }}">
           <td>
             <a href="{{ url_for('redirect_short_url', short_id=link[1]) }}"
@@ -51,6 +53,7 @@
             >
           </td>
           <td>{{ link[2] }}</td>
+          <td>{{ link[6] }}</td>
           <td><button onclick="deleteLink('{{ link[1] }}')">Delete</button></td>
         </tr>
         {% endfor %}

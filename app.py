@@ -46,7 +46,7 @@ def shorten_url():
             return jsonify({'shortId': short_id, 'originalUrl': url, 'ogTitle': og_title, 'ogDescription': og_description, 'ogImage': og_image})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-    
+
 @app.route('/<short_id>', methods=['GET'])
 def redirect_short_url(short_id):
     try:
@@ -57,6 +57,9 @@ def redirect_short_url(short_id):
                 return 'Shortened URL not found', 404
 
             original_url, og_title, og_description, og_image = result
+
+            cur.execute("UPDATE links SET clicks = clicks + 1 WHERE short_id = %s", (short_id,))
+            conn.commit()
 
             html_response = f"""
                 <html>
