@@ -95,6 +95,20 @@ def delete_short_url(short_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def is_valid_passcode(passcode):
+    correct_passcode = os.environ.get("AUTH_PASSCODE")
+    return passcode == correct_passcode
+
+@app.route('/validate-passcode', methods=['POST'])
+def validate_passcode():
+    passcode = request.json.get('passcode')
+    
+    # Check if the passcode is valid (compare with the correct passcode from env)
+    if is_valid_passcode(passcode):
+        return jsonify({'message': 'Passcode validated successfully'}), 200
+    else:
+        return jsonify({'error': 'Incorrect passcode'}), 401
+
 @app.route('/')
 def index():
     try:
