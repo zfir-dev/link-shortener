@@ -1,20 +1,4 @@
 document
-  .getElementById("submitPasscodeButton")
-  .addEventListener("click", function () {
-    const passcode = document.getElementById("passcodeInput").value;
-
-    axios
-      .post("/validate-passcode", { passcode })
-      .then(function (response) {
-        document.getElementById("passwordOverlay").style.display = "none";
-      })
-      .catch(function (error) {
-        console.error("Error validating passcode:", error);
-        alert("Incorrect passcode. Please try again.");
-      });
-  });
-
-document
   .getElementById("fetchMetadataButton")
   .addEventListener("click", function () {
     const url = document.getElementById("urlInput").value;

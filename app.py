@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, redirect
+from flask import Flask, request, jsonify, render_template, make_response
 import os
 import psycopg2
 import shortuuid
@@ -58,7 +58,6 @@ def redirect_short_url(short_id):
 
             original_url, og_title, og_description, og_image = result
 
-            # Construct the HTML response with Open Graph details and redirection
             html_response = f"""
                 <html>
                     <head>
@@ -76,8 +75,7 @@ def redirect_short_url(short_id):
                     </body>
                 </html>
             """
-            
-            # Return the HTML response with Open Graph details and redirection
+
             return html_response
     except Exception as e:
         return str(e), 500
@@ -102,23 +100,28 @@ def is_valid_passcode(passcode):
 @app.route('/validate-passcode', methods=['POST'])
 def validate_passcode():
     passcode = request.json.get('passcode')
-    
-    # Check if the passcode is valid (compare with the correct passcode from env)
+
     if is_valid_passcode(passcode):
-        return jsonify({'message': 'Passcode validated successfully'}), 200
+        response = make_response(jsonify({'message': 'Passcode validated successfully'}), 200)
+        response.set_cookie('passcode', passcode)
+        return response
     else:
         return jsonify({'error': 'Incorrect passcode'}), 401
 
 @app.route('/')
 def index():
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM links")
-            links = cur.fetchall()
-            return render_template('index.html', links=links)
-    except Exception as e:
-        print(e)
-        return render_template('index.html', links=[])
+    passcode = request.cookies.get('passcode')
+    if passcode == os.environ.get("AUTH_PASSCODE"):
+        try:
+            with conn.cursor() as cur:
+                cur.execute("SELECT * FROM links")
+                links = cur.fetchall()
+                return render_template('index.html', links=links)
+        except Exception as e:
+            print(e)
+            return render_template('index.html', links=[])
+
+    return render_template('password.html')
 
 if __name__ == '__main__':
     app.run(port=os.environ.get("PORT", 3000))
