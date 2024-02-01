@@ -51,11 +51,34 @@ def shorten_url():
 def redirect_short_url(short_id):
     try:
         with conn.cursor() as cur:
-            cur.execute("SELECT original_url FROM links WHERE short_id = %s", (short_id,))
+            cur.execute("SELECT original_url, og_title, og_description, og_image FROM links WHERE short_id = %s", (short_id,))
             result = cur.fetchone()
             if result is None:
                 return 'Shortened URL not found', 404
-            return redirect(result[0], code=302)
+
+            original_url, og_title, og_description, og_image = result
+
+            # Construct the HTML response with Open Graph details and redirection
+            html_response = f"""
+                <html>
+                    <head>
+                        <title>{og_title or 'Redirect'}</title>
+                        <meta property="og:title" content="{og_title or ''}" />
+                        <meta property="og:description" content="{og_description or ''}" />
+                        <meta property="og:image" content="{og_image or ''}" />
+                        <meta http-equiv="refresh" content="0;url={original_url}" />
+                    </head>
+                    <body>
+                        <p>Redirecting...</p>
+                        <script>
+                            window.location.href = "{original_url}";
+                        </script>
+                    </body>
+                </html>
+            """
+            
+            # Return the HTML response with Open Graph details and redirection
+            return html_response
     except Exception as e:
         return str(e), 500
 
