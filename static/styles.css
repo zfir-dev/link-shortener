@@ -32,6 +32,7 @@ input[type="password"] {
 button {
   background-color: #4caf50;
   color: white;
+  margin: 5px;
   padding: 10px 15px;
   border: none;
   border-radius: 4px;
