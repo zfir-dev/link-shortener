@@ -45,7 +45,6 @@
       </thead>
       <tbody>
         {% for link in links %}
-        <p>{{link}}</p>
         <tr id="link-{{ link[1] }}">
           <td>
             <a href="{{ url_for('redirect_short_url', short_id=link[1]) }}"
