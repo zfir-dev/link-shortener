@@ -115,7 +115,10 @@
             <tbody>
               {% for link in links %}
               <tr id="link-{{ link[1] }}" class="border-b border-gray-300">
-                <td class="py-2 px-3 text-center border-r border-gray-300">
+                <td
+                  style="max-width: 70px"
+                  class="py-2 px-3 text-center border-r border-gray-300 overflow-x-auto md:overflow-x-hidden"
+                >
                   <a
                     href="{{ url_for('redirect_short_url', short_id=link[1]) }}"
                     target="_blank"
@@ -124,20 +127,26 @@
                   >
                 </td>
                 <td
-                  class="py-2 px-3 hidden md:table-cell border-r border-gray-300"
+                  style="max-width: 70px"
+                  class="py-2 px-3 hidden md:table-cell border-r border-gray-300 md:overflow-x-auto overflow-x-hidden"
                 >
                   {{ link[2] }}
                 </td>
-                <td class="py-2 px-3 md:hidden border-r border-gray-300">
+                <td
+                  style="max-width: 70px"
+                  class="py-2 px-3 md:hidden border-r border-gray-300 overflow-x-auto md:overflow-x-hidden"
+                >
                   {{ link[2] }}
                 </td>
                 <td
-                  class="py-2 px-3 text-center hidden md:table-cell border-r border-gray-300"
+                  style="max-width: 70px"
+                  class="py-2 px-3 text-center hidden md:table-cell border-r border-gray-300 md:overflow-x-auto overflow-x-hidden"
                 >
                   {{ link[6] }}
                 </td>
                 <td
-                  class="py-2 px-3 text-center md:hidden border-r border-gray-300"
+                  style="max-width: 70px"
+                  class="py-2 px-3 text-center md:hidden border-r border-gray-300 overflow-x-auto md:overflow-x-hidden"
                 >
                   {{ link[6] }}
                 </td>
