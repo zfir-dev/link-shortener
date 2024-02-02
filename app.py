@@ -68,14 +68,13 @@ def redirect_short_url(short_id):
                     <meta property="og:title" content="{og_title or ''}" />
                     <meta property="og:description" content="{og_description or ''}" />
                     <meta property="og:image" content="{og_image or ''}" />
-                    <meta http-equiv="refresh" content="0;url={original_url}" />
                 </head>
                 <body>
                     <p>Redirecting...</p>
                     <script>
                         setTimeout(function () {{
                             window.location.href = "{original_url}";
-                        }}, 10000);
+                        }}, 5000);
                     </script>
                 </body>
             </html>
