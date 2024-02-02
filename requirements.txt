@@ -16,4 +16,5 @@ requests==2.31.0
 shortuuid==1.0.11
 soupsieve==2.5
 urllib3==2.2.0
+waitress==2.1.2
 Werkzeug==3.0.1

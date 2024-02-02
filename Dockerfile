@@ -4,4 +4,4 @@ COPY . .
 RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 5000
 ENV FLASK_ENV=production
-CMD ["python", "app.py"]
+CMD ["waitress-serve", "--port=5000", "app:app"]
