@@ -48,7 +48,7 @@ document
   });
 
 function copyLink(shortId) {
-  const link = location.href + shortId;
+  const link = window.location.href.split("?")[0] + shortId;
   const el = document.createElement("textarea");
   el.value = link;
   document.body.appendChild(el);
@@ -68,6 +68,7 @@ function deleteLink(shortId) {
           linkRow.parentNode.removeChild(linkRow);
         }
         showAlert("URL deleted successfully", "success");
+        location.reload();
       } else {
         showAlert("Error deleting URL: " + response.data.error, "error");
       }
