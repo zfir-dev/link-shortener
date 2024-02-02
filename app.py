@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, render_template, make_response, send_from_directory
 import os
-import psycopg2
+from psycopg2 import pool
 import shortuuid
 import requests
 from bs4 import BeautifulSoup
@@ -10,7 +10,7 @@ load_dotenv()
 
 app = Flask(__name__, static_folder='static')
 
-db_pool = psycopg2.pool.SimpleConnectionPool(
+db_pool = pool.SimpleConnectionPool(
     minconn=1,
     maxconn=5,
     host=os.environ.get("DATABASE_HOST"),
