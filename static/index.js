@@ -68,6 +68,7 @@ function deleteLink(shortId) {
           linkRow.parentNode.removeChild(linkRow);
         }
         showAlert("URL deleted successfully", "success");
+        location.reload();
       } else {
         showAlert("Error deleting URL: " + response.data.error, "error");
       }
