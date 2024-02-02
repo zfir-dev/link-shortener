@@ -68,7 +68,7 @@ def redirect_short_url(short_id):
                         <meta property="og:title" content="{og_title or ''}" />
                         <meta property="og:description" content="{og_description or ''}" />
                         <meta property="og:image" content="{og_image or ''}" />
-                        <meta http-equiv="refresh" content="0;url={original_url}" />
+                        <meta http-equiv="refresh" content="10;url={original_url}" />
                     </head>
                     <body>
                         <p>Redirecting...</p>
