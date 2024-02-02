@@ -60,6 +60,9 @@ def shorten_url():
 
             return jsonify({'shortId': short_id, 'originalUrl': url, 'ogTitle': og_title, 'ogDescription': og_description, 'ogImage': og_image})
     except Exception as e:
+        if conn:
+            release_db_connection(conn)
+
         return jsonify({'error': str(e)}), 500
 
 @app.route('/<short_id>', methods=['GET'])
@@ -70,6 +73,8 @@ def redirect_short_url(short_id):
             cur.execute("SELECT original_url, og_title, og_description, og_image FROM links WHERE short_id = %s", (short_id,))
             result = cur.fetchone()
             if result is None:
+                release_db_connection(conn)
+
                 return 'Shortened URL not found', 404
 
             original_url, og_title, og_description, og_image = result
@@ -107,6 +112,9 @@ def redirect_short_url(short_id):
 
             return html_response
     except Exception as e:
+        if conn:
+            release_db_connection(conn)
+
         return str(e), 500
 
 @app.route('/delete/<short_id>', methods=['DELETE'])
@@ -118,6 +126,8 @@ def delete_short_url(short_id):
             deleted_row = cur.fetchone()
             conn.commit()
             if deleted_row is None:
+                release_db_connection(conn)
+
                 return jsonify({'error': 'Shortened URL not found'}), 404
             
 
@@ -125,6 +135,9 @@ def delete_short_url(short_id):
 
             return jsonify({'message': 'URL deleted successfully'}), 200
     except Exception as e:
+        if conn:
+            release_db_connection(conn)
+
         return jsonify({'error': str(e)}), 500
     
 @app.route('/robots.txt')
@@ -160,7 +173,9 @@ def index():
 
                 return render_template('index.html', links=links)
         except Exception as e:
-            print(e)
+            if conn:
+                release_db_connection(conn)
+
             return render_template('index.html', links=[])
 
     return render_template('password.html')
