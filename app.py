@@ -88,7 +88,7 @@ def redirect_short_url(short_id):
 
             current_timestamp = datetime.now()
 
-            cur.execute("UPDATE links SET clicks = clicks + 1, updatedAt = %s WHERE short_id = %s", (current_timestamp, short_id))
+            cur.execute("UPDATE links SET clicks = clicks + 1, updated_at = %s WHERE short_id = %s", (current_timestamp, short_id))
             conn.commit()
 
             html_response = f"""
@@ -170,25 +170,36 @@ def validate_passcode():
 
 @app.route('/')
 def index():
+    records_per_page = 3
     passcode = request.cookies.get('passcode')
     if passcode == os.environ.get("AUTH_PASSCODE"):
         try:
+            page = request.args.get('page', default=1, type=int)
+
             conn = get_db_connection()
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM links ORDER BY updated_at DESC")
+                offset = (page - 1) * records_per_page
+                cur.execute("SELECT * FROM links ORDER BY updated_at DESC LIMIT %s OFFSET %s", (records_per_page, offset))
                 links = cur.fetchall()
+
+                cur.execute("SELECT COUNT(*) FROM links")
+                total_records = cur.fetchone()[0]
 
                 release_db_connection(conn)
 
-                return render_template('index.html', links=links)
+                if not links:
+                    links = []
+                    total_records = 0
+                    page = 1
+
+                return render_template('index.html', links=links, total_records=total_records, page=page, records_per_page=records_per_page)
         except Exception as e:
             if conn:
                 release_db_connection(conn)
 
-            return render_template('index.html', links=[])
+            return render_template('index.html', links=[], total_records=0, page=1, records_per_page=records_per_page)
 
     return render_template('password.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=os.environ.get("PORT", 3000))
-
