@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, make_response
+from flask import Flask, request, jsonify, render_template, make_response, send_from_directory
 import os
 import psycopg2
 import shortuuid
@@ -105,6 +105,10 @@ def delete_short_url(short_id):
             return jsonify({'message': 'URL deleted successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+@app.route('/robots.txt')
+def serve_robots_txt():
+    return send_from_directory(app.static_folder, 'robots.txt')
 
 def is_valid_passcode(passcode):
     correct_passcode = os.environ.get("AUTH_PASSCODE")
