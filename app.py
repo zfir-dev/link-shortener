@@ -5,6 +5,7 @@ import shortuuid
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
@@ -49,11 +50,15 @@ def shorten_url():
     og_description = request.json.get('ogDescription')
     og_image = request.json.get('ogImage')
     short_id = shortuuid.ShortUUID().random(length=7)
+    current_timestamp = datetime.now()
+
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute('INSERT INTO links (short_id, original_url, og_title, og_description, og_image) VALUES (%s, %s, %s, %s, %s) RETURNING *',
-                        (short_id, url, og_title, og_description, og_image))
+            cur.execute(
+                'INSERT INTO links (short_id, original_url, og_title, og_description, og_image, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING *',
+                (short_id, url, og_title, og_description, og_image, current_timestamp, current_timestamp)
+            )
             conn.commit()
 
             release_db_connection(conn)
@@ -64,6 +69,8 @@ def shorten_url():
             release_db_connection(conn)
 
         return jsonify({'error': str(e)}), 500
+
+from datetime import datetime
 
 @app.route('/<short_id>', methods=['GET'])
 def redirect_short_url(short_id):
@@ -79,7 +86,9 @@ def redirect_short_url(short_id):
 
             original_url, og_title, og_description, og_image = result
 
-            cur.execute("UPDATE links SET clicks = clicks + 1 WHERE short_id = %s", (short_id,))
+            current_timestamp = datetime.now()
+
+            cur.execute("UPDATE links SET clicks = clicks + 1, updatedAt = %s WHERE short_id = %s", (current_timestamp, short_id))
             conn.commit()
 
             html_response = f"""
@@ -166,7 +175,7 @@ def index():
         try:
             conn = get_db_connection()
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM links")
+                cur.execute("SELECT * FROM links ORDER BY updated_at DESC")
                 links = cur.fetchall()
 
                 release_db_connection(conn)
