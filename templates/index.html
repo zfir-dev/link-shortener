@@ -14,19 +14,19 @@
     <div class="container mx-auto p-6">
       <h1 class="text-4xl font-semibold mb-4">Link Shortener</h1>
 
-      <form id="urlForm" class="mb-6">
+      <form id="urlForm" class="mb-6 w-full">
         <div class="flex items-center space-x-4">
           <input
             type="url"
             id="urlInput"
-            class="w-3/4 py-2 px-3 border rounded-md focus:outline-none focus:border-blue-500"
+            class="w-full py-2 px-3 border rounded-md focus:outline-none focus:border-blue-500"
             placeholder="Enter URL"
             required
           />
           <button
             type="button"
             id="fetchMetadataButton"
-            class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md focus:outline-none"
+            class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md focus:outline-none whitespace-nowrap"
           >
             Fetch Metadata
           </button>
@@ -79,16 +79,24 @@
         <table class="w-full border-collapse border border-gray-300">
           <thead>
             <tr>
-              <th class="py-2 px-3 bg-gray-200 border-b border-gray-300">
+              <th
+                class="py-2 px-3 bg-gray-200 border-b border-gray-300 text-center"
+              >
                 Short URL
               </th>
-              <th class="py-2 px-3 bg-gray-200 border-b border-gray-300">
+              <th
+                class="py-2 px-3 bg-gray-200 border-b border-gray-300 text-center"
+              >
                 Original URL
               </th>
-              <th class="py-2 px-3 bg-gray-200 border-b border-gray-300">
+              <th
+                class="py-2 px-3 bg-gray-200 border-b border-gray-300 text-center"
+              >
                 Clicks
               </th>
-              <th class="py-2 px-3 bg-gray-200 border-b border-gray-300">
+              <th
+                class="py-2 px-3 bg-gray-200 border-b border-gray-300 text-center"
+              >
                 Actions
               </th>
             </tr>
@@ -96,7 +104,7 @@
           <tbody>
             {% for link in links %}
             <tr id="link-{{ link[1] }}" class="border-b border-gray-300">
-              <td class="py-2 px-3">
+              <td class="py-2 px-3 text-center">
                 <a
                   href="{{ url_for('redirect_short_url', short_id=link[1]) }}"
                   target="_blank"
@@ -106,17 +114,17 @@
                 </a>
               </td>
               <td class="py-2 px-3">{{ link[2] }}</td>
-              <td class="py-2 px-3">{{ link[6] }}</td>
-              <td class="py-2 px-3">
+              <td class="py-2 px-3 text-center">{{ link[6] }}</td>
+              <td class="py-2 px-3 text-center">
                 <button
                   onclick="copyLink('{{ link[1] }}')"
-                  class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded-md mr-2 focus:outline-none"
+                  class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded-md m-1 focus:outline-none"
                 >
                   Copy
                 </button>
                 <button
                   onclick="deleteLink('{{ link[1] }}')"
-                  class="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded-md focus:outline-none"
+                  class="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded-md m-1 focus:outline-none"
                 >
                   Delete
                 </button>
