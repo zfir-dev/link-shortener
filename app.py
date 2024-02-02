@@ -58,8 +58,6 @@ def redirect_short_url(short_id):
 
             original_url, og_title, og_description, og_image = result
 
-            print(result)
-
             cur.execute("UPDATE links SET clicks = clicks + 1 WHERE short_id = %s", (short_id,))
             conn.commit()
 
