@@ -10,13 +10,24 @@ load_dotenv()
 
 app = Flask(__name__, static_folder='static')
 
-conn = psycopg2.connect(
+db_pool = psycopg2.pool.SimpleConnectionPool(
+    minconn=1,
+    maxconn=5,
     host=os.environ.get("DATABASE_HOST"),
     database=os.environ.get("DATABASE_NAME"),
     user=os.environ.get("DATABASE_USER"),
     password=os.environ.get("DATABASE_PASSWORD"),
     sslmode='require'
 )
+
+def get_db_connection():
+    return db_pool.getconn()
+
+def release_db_connection(conn):
+    db_pool.putconn(conn)
+
+def close_db_pool():
+    db_pool.closeall()
 
 @app.route('/fetch-metadata', methods=['POST'])
 def fetch_metadata():
@@ -39,6 +50,7 @@ def shorten_url():
     og_image = request.json.get('ogImage')
     short_id = shortuuid.ShortUUID().random(length=7)
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute('INSERT INTO links (short_id, original_url, og_title, og_description, og_image) VALUES (%s, %s, %s, %s, %s) RETURNING *',
                         (short_id, url, og_title, og_description, og_image))
@@ -50,6 +62,7 @@ def shorten_url():
 @app.route('/<short_id>', methods=['GET'])
 def redirect_short_url(short_id):
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("SELECT original_url, og_title, og_description, og_image FROM links WHERE short_id = %s", (short_id,))
             result = cur.fetchone()
@@ -94,6 +107,7 @@ def redirect_short_url(short_id):
 @app.route('/delete/<short_id>', methods=['DELETE'])
 def delete_short_url(short_id):
     try:
+        conn = get_db_connection()
         with conn.cursor() as cur:
             cur.execute("DELETE FROM links WHERE short_id = %s RETURNING *", (short_id,))
             deleted_row = cur.fetchone()
@@ -128,6 +142,7 @@ def index():
     passcode = request.cookies.get('passcode')
     if passcode == os.environ.get("AUTH_PASSCODE"):
         try:
+            conn = get_db_connection()
             with conn.cursor() as cur:
                 cur.execute("SELECT * FROM links")
                 links = cur.fetchall()
