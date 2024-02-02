@@ -55,6 +55,9 @@ def shorten_url():
             cur.execute('INSERT INTO links (short_id, original_url, og_title, og_description, og_image) VALUES (%s, %s, %s, %s, %s) RETURNING *',
                         (short_id, url, og_title, og_description, og_image))
             conn.commit()
+
+            release_db_connection(conn)
+
             return jsonify({'shortId': short_id, 'originalUrl': url, 'ogTitle': og_title, 'ogDescription': og_description, 'ogImage': og_image})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -100,6 +103,8 @@ def redirect_short_url(short_id):
                 </html>
             """
 
+            release_db_connection(conn)
+
             return html_response
     except Exception as e:
         return str(e), 500
@@ -114,6 +119,10 @@ def delete_short_url(short_id):
             conn.commit()
             if deleted_row is None:
                 return jsonify({'error': 'Shortened URL not found'}), 404
+            
+
+            release_db_connection(conn)
+
             return jsonify({'message': 'URL deleted successfully'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -146,6 +155,9 @@ def index():
             with conn.cursor() as cur:
                 cur.execute("SELECT * FROM links")
                 links = cur.fetchall()
+
+                release_db_connection(conn)
+
                 return render_template('index.html', links=links)
         except Exception as e:
             print(e)
