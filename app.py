@@ -11,6 +11,8 @@ load_dotenv()
 
 app = Flask(__name__, static_folder='static')
 
+records_per_page = int(os.environ.get("RECORDS_PER_PAGE", 10))
+
 db_pool = pool.SimpleConnectionPool(
     minconn=1,
     maxconn=5,
@@ -170,7 +172,6 @@ def validate_passcode():
 
 @app.route('/')
 def index():
-    records_per_page = 3
     passcode = request.cookies.get('passcode')
     if passcode == os.environ.get("AUTH_PASSCODE"):
         try:
