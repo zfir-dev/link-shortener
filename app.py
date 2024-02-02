@@ -69,6 +69,9 @@ def redirect_short_url(short_id):
                         <meta name="twitter:card" content="summary" />
                         <meta name="twitter:site" content="@nytimesbits" />
                         <meta name="twitter:creator" content="@nickbilton" />
+                        <meta name="twitter:title" content="{og_title or ''}" />
+                        <meta name="twitter:description" content="{og_description or ''}" />
+                        <meta name="twitter:image" content="{og_image or ''}" />
                         <!-- Open Graph (OG) metadata -->
                         <meta property="og:url" content="{original_url}" />
                         <meta property="og:title" content="{og_title or ''}" />
