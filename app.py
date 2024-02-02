@@ -5,10 +5,13 @@ import shortuuid
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
 app = Flask(__name__, static_folder='static')
+
+records_per_page = int(os.environ.get("RECORDS_PER_PAGE", 10))
 
 db_pool = pool.SimpleConnectionPool(
     minconn=1,
@@ -49,11 +52,15 @@ def shorten_url():
     og_description = request.json.get('ogDescription')
     og_image = request.json.get('ogImage')
     short_id = shortuuid.ShortUUID().random(length=7)
+    current_timestamp = datetime.now()
+
     try:
         conn = get_db_connection()
         with conn.cursor() as cur:
-            cur.execute('INSERT INTO links (short_id, original_url, og_title, og_description, og_image) VALUES (%s, %s, %s, %s, %s) RETURNING *',
-                        (short_id, url, og_title, og_description, og_image))
+            cur.execute(
+                'INSERT INTO links (short_id, original_url, og_title, og_description, og_image, created_at, updated_at) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING *',
+                (short_id, url, og_title, og_description, og_image, current_timestamp, current_timestamp)
+            )
             conn.commit()
 
             release_db_connection(conn)
@@ -64,6 +71,8 @@ def shorten_url():
             release_db_connection(conn)
 
         return jsonify({'error': str(e)}), 500
+
+from datetime import datetime
 
 @app.route('/<short_id>', methods=['GET'])
 def redirect_short_url(short_id):
@@ -79,7 +88,9 @@ def redirect_short_url(short_id):
 
             original_url, og_title, og_description, og_image = result
 
-            cur.execute("UPDATE links SET clicks = clicks + 1 WHERE short_id = %s", (short_id,))
+            current_timestamp = datetime.now()
+
+            cur.execute("UPDATE links SET clicks = clicks + 1, updated_at = %s WHERE short_id = %s", (current_timestamp, short_id))
             conn.commit()
 
             html_response = f"""
@@ -164,22 +175,32 @@ def index():
     passcode = request.cookies.get('passcode')
     if passcode == os.environ.get("AUTH_PASSCODE"):
         try:
+            page = request.args.get('page', default=1, type=int)
+
             conn = get_db_connection()
             with conn.cursor() as cur:
-                cur.execute("SELECT * FROM links")
+                offset = (page - 1) * records_per_page
+                cur.execute("SELECT * FROM links ORDER BY updated_at DESC LIMIT %s OFFSET %s", (records_per_page, offset))
                 links = cur.fetchall()
+
+                cur.execute("SELECT COUNT(*) FROM links")
+                total_records = cur.fetchone()[0]
 
                 release_db_connection(conn)
 
-                return render_template('index.html', links=links)
+                if not links:
+                    links = []
+                    total_records = 0
+                    page = 1
+
+                return render_template('index.html', links=links, total_records=total_records, page=page, records_per_page=records_per_page)
         except Exception as e:
             if conn:
                 release_db_connection(conn)
 
-            return render_template('index.html', links=[])
+            return render_template('index.html', links=[], total_records=0, page=1, records_per_page=records_per_page)
 
     return render_template('password.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=os.environ.get("PORT", 3000))
-

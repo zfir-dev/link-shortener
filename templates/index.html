@@ -4,63 +4,212 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Link Shortener</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+    />
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="/static/styles.css" />
   </head>
-  <body>
-    <h1>Link Shortener</h1>
+  <body class="bg-gray-100">
+    <div class="container mx-auto p-6">
+      <h1 class="text-4xl font-semibold mb-4">Link Shortener</h1>
 
-    <form id="urlForm">
-      <div class="form-group">
-        <input type="url" id="urlInput" placeholder="Enter URL" required />
-        <button type="button" id="fetchMetadataButton">Fetch Metadata</button>
-      </div>
-    </form>
+      <form id="urlForm" class="mb-6 w-full">
+        <div class="flex items-center space-x-4">
+          <input
+            type="url"
+            id="urlInput"
+            class="w-full py-2 px-3 border rounded-md focus:outline-none focus:border-blue-500"
+            placeholder="Enter URL"
+            required
+          />
+          <button
+            type="button"
+            id="fetchMetadataButton"
+            class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md focus:outline-none whitespace-nowrap"
+          >
+            Fetch Metadata
+          </button>
+        </div>
+      </form>
 
-    <form id="metadataForm" class="metadata-form" style="display: none">
-      <div class="form-group">
-        <label for="ogTitle">OG Title:</label>
-        <input type="text" id="ogTitle" />
-      </div>
-      <div class="form-group">
-        <label for="ogDescription">OG Description:</label>
-        <input type="text" id="ogDescription" />
-      </div>
-      <div class="form-group">
-        <label for="ogImage">OG Image URL:</label>
-        <input type="text" id="ogImage" />
-      </div>
-      <button type="submit">Shorten URL</button>
-    </form>
+      <form id="metadataForm" class="mb-6 hidden">
+        <div class="mb-4">
+          <label for="ogTitle" class="block text-sm font-medium text-gray-700"
+            >OG Title:</label
+          >
+          <input
+            type="text"
+            id="ogTitle"
+            class="mt-1 p-2 w-full rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:outline-none border-gray-300"
+          />
+        </div>
+        <div class="mb-4">
+          <label
+            for="ogDescription"
+            class="block text-sm font-medium text-gray-700"
+            >OG Description:</label
+          >
+          <input
+            type="text"
+            id="ogDescription"
+            class="mt-1 p-2 w-full rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:outline-none border-gray-300"
+          />
+        </div>
+        <div class="mb-4">
+          <label for="ogImage" class="block text-sm font-medium text-gray-700"
+            >OG Image URL:</label
+          >
+          <input
+            type="text"
+            id="ogImage"
+            class="mt-1 p-2 w-full rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:outline-none border-gray-300"
+          />
+        </div>
+        <button
+          type="submit"
+          class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md focus:outline-none"
+        >
+          Shorten URL
+        </button>
+      </form>
 
-    <h2>All Shortened URLs</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Short URL</th>
-          <th>Original URL</th>
-          <th>Clicks</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for link in links %}
-        <tr id="link-{{ link[1] }}">
-          <td>
-            <a
-              href="{{ url_for('redirect_short_url', short_id=link[1]) }}"
-              target="_blank"
-              >{{ link[1] }}</a
-            >
-          </td>
-          <td>{{ link[2] }}</td>
-          <td>{{ link[6] }}</td>
-          <td><button onclick="copyLink('{{ link[1] }}')">Copy</button><button onclick="deleteLink('{{ link[1] }}')">Delete</button></td>
-        </tr>
+      <h2 class="text-2xl font-semibold mb-4">All Shortened URLs</h2>
+      <div class="pagination flex justify-center space-x-2 mt-4">
+        {% for p in range(1, (total_records // records_per_page) + 2) %}
+        <a
+          href="?page={{ p }}"
+          class="px-4 py-2 rounded-full border border-gray-300 hover:bg-gray-200 {% if p == page %}bg-blue-500 text-white{% endif %}"
+        >
+          {{ p }}
+        </a>
         {% endfor %}
-      </tbody>
-    </table>
+      </div>
+      <div class="mt-4">
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse border border-gray-300">
+            <thead>
+              <tr>
+                <th
+                  class="py-2 px-3 bg-gray-200 border-b border-gray-300 text-center"
+                >
+                  Short URL
+                </th>
+                <th
+                  class="py-2 px-3 bg-gray-200 border-b border-gray-300 text-center"
+                >
+                  Original URL
+                </th>
+                <th
+                  class="py-2 px-3 bg-gray-200 border-b border-gray-300 text-center"
+                >
+                  Clicks
+                </th>
+                <th
+                  class="py-2 px-3 bg-gray-200 border-b border-gray-300 text-center"
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for link in links %}
+              <tr id="link-{{ link[1] }}" class="border-b border-gray-300">
+                <td
+                  style="max-width: 70px"
+                  class="py-2 px-3 text-center border-r border-gray-300 overflow-x-auto md:overflow-x-hidden"
+                >
+                  <a
+                    href="{{ url_for('redirect_short_url', short_id=link[1]) }}"
+                    target="_blank"
+                    class="text-blue-500 hover:underline"
+                    >{{ link[1] }}</a
+                  >
+                </td>
+                <td
+                  style="max-width: 70px"
+                  class="py-2 px-3 hidden md:table-cell border-r border-gray-300 md:overflow-x-auto overflow-x-hidden"
+                >
+                  {{ link[2] }}
+                </td>
+                <td
+                  style="max-width: 70px"
+                  class="py-2 px-3 md:hidden border-r border-gray-300 overflow-x-auto md:overflow-x-hidden"
+                >
+                  {{ link[2] }}
+                </td>
+                <td
+                  style="max-width: 70px"
+                  class="py-2 px-3 text-center hidden md:table-cell border-r border-gray-300 md:overflow-x-auto overflow-x-hidden"
+                >
+                  {{ link[6] }}
+                </td>
+                <td
+                  style="max-width: 70px"
+                  class="py-2 px-3 text-center md:hidden border-r border-gray-300 overflow-x-auto md:overflow-x-hidden"
+                >
+                  {{ link[6] }}
+                </td>
+                <td class="py-2 px-3 text-center">
+                  <button
+                    onclick="copyLink('{{ link[1] }}')"
+                    class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded-md m-1 focus:outline-none"
+                  >
+                    Copy
+                  </button>
+                  <button
+                    onclick="deleteLink('{{ link[1] }}')"
+                    class="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded-md m-1 focus:outline-none"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div
+      id="alertModal"
+      class="fixed top-0 left-0 w-full h-full flex items-center justify-center hidden"
+    >
+      <div
+        class="modal-overlay absolute w-full h-full bg-gray-900 opacity-50"
+      ></div>
+      <div
+        class="modal-container bg-white w-11/12 md:max-w-md mx-auto rounded shadow-lg z-50 overflow-y-auto"
+      >
+        <div class="modal-content py-4 text-left px-6">
+          <div class="flex justify-between items-center pb-3">
+            <p id="alertModalTitle" class="text-2xl font-bold">Alert</p>
+            <div class="modal-close cursor-pointer z-50">
+              <div
+                id="alertModalButton"
+                class="modal-close-button p-2 rounded-full hover:bg-red-600 hover:text-white"
+              >
+                <svg
+                  class="fill-current text-black"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 18 18"
+                >
+                  <path
+                    d="M6.293 6.293a1 1 0 011.414 0L9 7.586l1.293-1.293a1 1 0 111.414 1.414L10.414 9l1.293 1.293a1 1 0 11-1.414 1.414L9 10.414l-1.293 1.293a1 1 0 01-1.414-1.414L7.586 9 6.293 7.707a1 1 0 010-1.414z"
+                  ></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <p id="alertModalMessage" class="text-gray-700"></p>
+        </div>
+      </div>
+    </div>
 
     <script src="/static/index.js"></script>
+    <script src="/static/alert.js"></script>
   </body>
 </html>

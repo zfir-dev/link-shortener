@@ -3,7 +3,7 @@ document
   .addEventListener("click", function () {
     const url = document.getElementById("urlInput").value;
     if (!url) {
-      alert("Please enter a URL.");
+      showAlert("Please enter a URL.", "error");
       return;
     }
 
@@ -19,7 +19,10 @@ document
       .catch(function (error) {
         console.error("Error fetching metadata:", error);
         document.getElementById("metadataForm").style.display = "block";
-        alert("Metadata could not be fetched. You can still shorten the URL.");
+        showAlert(
+          "Metadata could not be fetched. You can still shorten the URL.",
+          "success"
+        );
       });
   });
 
@@ -35,24 +38,24 @@ document
     axios
       .post("/shorten", { url, ogTitle, ogDescription, ogImage })
       .then(function (response) {
-        alert("URL shortened: " + response.data.shortId);
+        showAlert("URL shortened: " + response.data.shortId, "success");
         location.reload();
       })
       .catch(function (error) {
         console.error("Error shortening URL:", error);
-        alert("Error shortening URL");
+        showAlert("Error shortening URL", "error");
       });
   });
 
 function copyLink(shortId) {
-  const link = location.href + shortId;
+  const link = window.location.href.split("?")[0] + shortId;
   const el = document.createElement("textarea");
   el.value = link;
   document.body.appendChild(el);
   el.select();
   document.execCommand("copy");
   document.body.removeChild(el);
-  alert("Shorten link copied to clipboard");
+  showAlert("Shorten link copied to clipboard", "success");
 }
 
 function deleteLink(shortId) {
@@ -64,13 +67,14 @@ function deleteLink(shortId) {
         if (linkRow) {
           linkRow.parentNode.removeChild(linkRow);
         }
-        alert("URL deleted successfully");
+        showAlert("URL deleted successfully", "success");
+        location.reload();
       } else {
-        alert("Error deleting URL: " + response.data.error);
+        showAlert("Error deleting URL: " + response.data.error, "error");
       }
     })
     .catch(function (error) {
       console.error("Error deleting URL:", error);
-      alert("Error deleting URL: " + error.response.data.error);
+      showAlert("Error deleting URL: " + error.response.data.error, "error");
     });
 }
