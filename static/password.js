@@ -1,8 +1,7 @@
-document.getElementById("submitPasscodeButton").addEventListener("click", function () {
+document
+  .getElementById("submitPasscodeButton")
+  .addEventListener("click", function () {
     const passcode = document.getElementById("passcodeInput").value;
-
-    console.log("Validating passcode:", passcode);
-
     axios
       .post("/validate-passcode", { passcode })
       .then(function (response) {
@@ -10,6 +9,6 @@ document.getElementById("submitPasscodeButton").addEventListener("click", functi
       })
       .catch(function (error) {
         console.error("Error validating passcode:", error);
-        alert("Incorrect passcode. Please try again.");
+        showAlert("Incorrect passcode. Please try again.", "error");
       });
-});
+  });
