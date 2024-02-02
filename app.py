@@ -62,22 +62,27 @@ def redirect_short_url(short_id):
             conn.commit()
 
             html_response = f"""
-            <html>
-                <head>
-                    <title>{og_title or 'Redirect'}</title>
-                    <meta property="og:title" content="{og_title or ''}" />
-                    <meta property="og:description" content="{og_description or ''}" />
-                    <meta property="og:image" content="{og_image or ''}" />
-                </head>
-                <body>
-                    <p>Redirecting...</p>
-                    <script>
-                        setTimeout(function () {{
-                            window.location.href = "{original_url}";
-                        }}, 5000);
-                    </script>
-                </body>
-            </html>
+                <html>
+                    <head>
+                        <title>{og_title or 'Redirect'}</title>
+                        <meta property="og:title" content="{og_title or ''}" />
+                        <meta property="og:description" content="{og_description or ''}" />
+                        <meta property="og:image" content="{og_image or ''}" />
+                        <!-- Twitter Card metadata -->
+                        <meta name="twitter:card" content="summary_large_image">
+                        <meta name="twitter:title" content="{og_title or ''}">
+                        <meta name="twitter:description" content="{og_description or ''}">
+                        <meta name="twitter:image" content="{og_image or ''}">
+                    </head>
+                    <body>
+                        <p>Redirecting...</p>
+                        <script>
+                            setTimeout(function () {{
+                                window.location.href = "{original_url}";
+                            }}, 5000);
+                        </script>
+                    </body>
+                </html>
             """
 
             return html_response
