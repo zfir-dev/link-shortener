@@ -113,7 +113,7 @@ def redirect_short_url(short_id):
                         <script>
                             setTimeout(function () {{
                                 window.location.href = "{original_url}";
-                            }}, 5000);
+                            }}, 2000);
                         </script>
                     </body>
                 </html>
