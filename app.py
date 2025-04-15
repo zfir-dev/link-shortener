@@ -219,6 +219,7 @@ def delete_short_url(short_id):
     except Exception as e:
         if conn:
             release_db_connection(conn)
+
         return jsonify({"error": str(e)}), 500
 
 @app.route("/robots.txt")
