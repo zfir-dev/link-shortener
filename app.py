@@ -3,8 +3,10 @@ from flask import (
     request,
     jsonify,
     render_template,
-    make_response,
     send_from_directory,
+    redirect,
+    url_for,
+    flash
 )
 import os
 from psycopg2 import pool
@@ -14,9 +16,42 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from datetime import datetime
 
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    login_user,
+    login_required,
+    logout_user,
+    current_user
+)
+
 load_dotenv()
 
 app = Flask(__name__, static_folder="static")
+app.config['SECRET_KEY'] = os.environ.get("FLASK_SECRET_KEY", "your_default_secret_key")
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = "login"
+
+users = {
+    "admin": {
+        "password": os.environ.get("ADMIN_PASSWORD", "adminpass")
+    }
+}
+
+class User(UserMixin):
+    def __init__(self, username):
+        self.id = username
+
+    def __repr__(self):
+        return f"<User {self.id}>"
+
+@login_manager.user_loader
+def load_user(user_id):
+    if user_id in users:
+        return User(user_id)
+    return None
 
 records_per_page = int(os.environ.get("RECORDS_PER_PAGE", 10))
 
@@ -58,8 +93,8 @@ def fetch_metadata():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/shorten", methods=["POST"])
+@login_required
 def shorten_url():
     url = request.json.get("url")
     og_title = request.json.get("ogTitle")
@@ -101,10 +136,6 @@ def shorten_url():
             release_db_connection(conn)
 
         return jsonify({"error": str(e)}), 500
-
-
-from datetime import datetime
-
 
 @app.route("/<short_id>", methods=["GET"])
 def redirect_short_url(short_id):
@@ -166,8 +197,8 @@ def redirect_short_url(short_id):
 
         return str(e), 500
 
-
 @app.route("/delete/<short_id>", methods=["DELETE"])
+@login_required
 def delete_short_url(short_id):
     try:
         conn = get_db_connection()
@@ -191,78 +222,71 @@ def delete_short_url(short_id):
 
         return jsonify({"error": str(e)}), 500
 
-
 @app.route("/robots.txt")
 def serve_robots_txt():
     return send_from_directory(app.static_folder, "robots.txt")
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        if username in users and users[username]["password"] == password:
+            user = User(username)
+            login_user(user)
+            flash("Logged in successfully.", "success")
+            next_page = request.args.get("next") or url_for("index")
+            return redirect(next_page)
+        else:
+            flash("Invalid username or password.", "error")
+    return render_template("login.html")
 
-def is_valid_passcode(passcode):
-    correct_passcode = os.environ.get("AUTH_PASSCODE")
-    return passcode == correct_passcode
-
-
-@app.route("/validate-passcode", methods=["POST"])
-def validate_passcode():
-    passcode = request.json.get("passcode")
-
-    if is_valid_passcode(passcode):
-        response = make_response(
-            jsonify({"message": "Passcode validated successfully"}), 200
-        )
-        response.set_cookie("passcode", passcode)
-        return response
-    else:
-        return jsonify({"error": "Incorrect passcode"}), 401
-
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("You have been logged out.", "info")
+    return redirect(url_for("login"))
 
 @app.route("/")
+@login_required
 def index():
-    passcode = request.cookies.get("passcode")
-    if passcode == os.environ.get("AUTH_PASSCODE"):
-        try:
-            page = request.args.get("page", default=1, type=int)
-
-            conn = get_db_connection()
-            with conn.cursor() as cur:
-                offset = (page - 1) * records_per_page
-                cur.execute(
-                    "SELECT * FROM links ORDER BY updated_at DESC LIMIT %s OFFSET %s",
-                    (records_per_page, offset),
-                )
-                links = cur.fetchall()
-
-                cur.execute("SELECT COUNT(*) FROM links")
-                total_records = cur.fetchone()[0]
-
-                release_db_connection(conn)
-
-                if not links:
-                    links = []
-                    total_records = 0
-                    page = 1
-
-                return render_template(
-                    "index.html",
-                    links=links,
-                    total_records=total_records,
-                    page=page,
-                    records_per_page=records_per_page,
-                )
-        except Exception as e:
-            if conn:
-                release_db_connection(conn)
-
-            return render_template(
-                "index.html",
-                links=[],
-                total_records=0,
-                page=1,
-                records_per_page=records_per_page,
+    try:
+        page = request.args.get("page", default=1, type=int)
+        conn = get_db_connection()
+        with conn.cursor() as cur:
+            offset = (page - 1) * records_per_page
+            cur.execute(
+                "SELECT * FROM links ORDER BY updated_at DESC LIMIT %s OFFSET %s",
+                (records_per_page, offset)
             )
+            links = cur.fetchall()
+            cur.execute("SELECT COUNT(*) FROM links")
+            total_records = cur.fetchone()[0]
+        release_db_connection(conn)
 
-    return render_template("password.html")
+        if not links:
+            links = []
+            total_records = 0
+            page = 1
 
+        return render_template(
+            "index.html",
+            links=links,
+            total_records=total_records,
+            page=page,
+            records_per_page=records_per_page
+        )
+    except Exception as e:
+        if 'conn' in locals():
+            release_db_connection(conn)
+        return render_template(
+            "index.html",
+            links=[],
+            total_records=0,
+            page=1,
+            records_per_page=records_per_page
+        )
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=os.environ.get("PORT", 3000))
