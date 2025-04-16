@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Two-Factor Authentication - Link Shortener</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+    />
+  </head>
+  <body class="bg-gray-100">
+    <div class="container mx-auto p-6">
+      <h1 class="text-4xl font-semibold mb-4">Two-Factor Authentication</h1>
+
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="mb-4">
+        {% for category, message in messages %}
+        <div
+          class="p-4 mb-2 rounded {% if category == 'success' %}bg-green-500 text-white{% elif category == 'error' %}bg-red-500 text-white{% else %}bg-blue-500 text-white{% endif %}"
+        >
+          {{ message }}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
+
+      <form
+        action="{{ url_for('two_factor') }}"
+        method="post"
+        class="max-w-md mx-auto bg-white p-6 rounded shadow"
+      >
+        <div class="mb-4">
+          <label for="code" class="block text-sm font-medium text-gray-700"
+            >Authentication Code</label
+          >
+          <input
+            type="text"
+            name="code"
+            id="code"
+            placeholder="Enter the code from your authenticator app"
+            required
+            class="mt-1 block w-full p-2 border rounded-md focus:outline-none focus:ring focus:ring-blue-200"
+          />
+        </div>
+        <div class="flex items-center justify-between">
+          <button
+            type="submit"
+            class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md focus:outline-none"
+          >
+            Verify
+          </button>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>

@@ -6,7 +6,8 @@ from flask import (
     send_from_directory,
     redirect,
     url_for,
-    flash
+    flash,
+    session
 )
 import os
 from psycopg2 import pool
@@ -15,6 +16,7 @@ import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from datetime import datetime
+import pyotp
 
 from flask_login import (
     LoginManager,
@@ -24,6 +26,7 @@ from flask_login import (
     logout_user,
     current_user
 )
+from functools import wraps
 
 load_dotenv()
 
@@ -36,13 +39,15 @@ login_manager.login_view = "login"
 
 users = {
     "admin": {
-        "password": os.environ.get("ADMIN_PASSWORD", "adminpass")
+        "password": os.environ.get("ADMIN_PASSWORD", "adminpass"),
+        "totp_secret": os.environ.get("TWOFACTOR_SECRET_KEY", pyotp.random_base32())
     }
 }
 
 class User(UserMixin):
     def __init__(self, username):
         self.id = username
+        self.totp_secret = users[username]["totp_secret"]
 
     def __repr__(self):
         return f"<User {self.id}>"
@@ -52,6 +57,14 @@ def load_user(user_id):
     if user_id in users:
         return User(user_id)
     return None
+
+def two_factor_required(func):
+    @wraps(func)
+    def decorated_view(*args, **kwargs):
+        if not session.get("two_factor_authenticated", False):
+            return redirect(url_for("two_factor"))
+        return func(*args, **kwargs)
+    return decorated_view
 
 records_per_page = int(os.environ.get("RECORDS_PER_PAGE", 10))
 
@@ -65,18 +78,14 @@ db_pool = pool.SimpleConnectionPool(
     sslmode="require",
 )
 
-
 def get_db_connection():
     return db_pool.getconn()
-
 
 def release_db_connection(conn):
     db_pool.putconn(conn)
 
-
 def close_db_pool():
     db_pool.closeall()
-
 
 @app.route("/fetch-metadata", methods=["POST"])
 def fetch_metadata():
@@ -95,6 +104,7 @@ def fetch_metadata():
 
 @app.route("/shorten", methods=["POST"])
 @login_required
+@two_factor_required
 def shorten_url():
     url = request.json.get("url")
     og_title = request.json.get("ogTitle")
@@ -134,7 +144,6 @@ def shorten_url():
     except Exception as e:
         if conn:
             release_db_connection(conn)
-
         return jsonify({"error": str(e)}), 500
 
 @app.route("/<short_id>", methods=["GET"])
@@ -199,6 +208,7 @@ def redirect_short_url(short_id):
 
 @app.route("/delete/<short_id>", methods=["DELETE"])
 @login_required
+@two_factor_required
 def delete_short_url(short_id):
     try:
         conn = get_db_connection()
@@ -234,9 +244,9 @@ def login():
         if username in users and users[username]["password"] == password:
             user = User(username)
             login_user(user)
-            flash("Logged in successfully.", "success")
-            next_page = request.args.get("next") or url_for("index")
-            return redirect(next_page)
+            session["two_factor_authenticated"] = False
+            flash("Password accepted. Please enter your 2FA code.", "info")
+            return redirect(url_for("two_factor"))
         else:
             flash("Invalid username or password.", "error")
     return render_template("login.html")
@@ -245,11 +255,28 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.pop("two_factor_authenticated", None)
     flash("You have been logged out.", "info")
     return redirect(url_for("login"))
 
+@app.route("/two_factor", methods=["GET", "POST"])
+@login_required
+def two_factor():
+    if request.method == "POST":
+        code = request.form.get("code")
+        totp = pyotp.TOTP(current_user.totp_secret)
+        if totp.verify(code):
+            session["two_factor_authenticated"] = True
+            flash("2FA successful. You are now logged in.", "success")
+            next_page = request.args.get("next") or url_for("index")
+            return redirect(next_page)
+        else:
+            flash("Invalid 2FA code. Please try again.", "error")
+    return render_template("two_factor.html")
+
 @app.route("/")
 @login_required
+@two_factor_required
 def index():
     try:
         page = request.args.get("page", default=1, type=int)
