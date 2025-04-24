@@ -16,4 +16,4 @@ services:
       - TEMPLATES_AUTO_RELOAD=True
     volumes:
       - .:/app
-    restart: unless-stopped 
+    restart: unless-stopped
