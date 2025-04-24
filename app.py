@@ -64,7 +64,6 @@ def two_factor_required(func):
         if not session.get("two_factor_authenticated", False):
             return redirect(url_for("two_factor"))
             
-        # Check if OTP has expired
         otp_generated_at = session.get("otp_generated_at")
         current_time = datetime.now().timestamp()
         
