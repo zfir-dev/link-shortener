@@ -15,7 +15,7 @@ import shortuuid
 import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
 import pyotp
 
 from flask_login import (
@@ -245,6 +245,7 @@ def login():
             user = User(username)
             login_user(user)
             session["two_factor_authenticated"] = False
+            session["otp_generated_at"] = datetime.now().timestamp()
             flash("Password accepted. Please enter your 2FA code.", "info")
             return redirect(url_for("two_factor"))
         else:
@@ -256,6 +257,7 @@ def login():
 def logout():
     logout_user()
     session.pop("two_factor_authenticated", None)
+    session.pop("otp_generated_at", None)
     flash("You have been logged out.", "info")
     return redirect(url_for("login"))
 
@@ -265,8 +267,19 @@ def two_factor():
     if request.method == "POST":
         code = request.form.get("code")
         totp = pyotp.TOTP(current_user.totp_secret)
+        
+        # Check if OTP has expired (60 minutes)
+        otp_generated_at = session.get("otp_generated_at")
+        if not otp_generated_at or (datetime.now().timestamp() - otp_generated_at) > 3600:  # 3600 seconds = 60 minutes
+            flash("2FA code has expired. Please log in again.", "error")
+            logout_user()
+            session.pop("two_factor_authenticated", None)
+            session.pop("otp_generated_at", None)
+            return redirect(url_for("login"))
+            
         if totp.verify(code):
             session["two_factor_authenticated"] = True
+            session.pop("otp_generated_at", None)  # Clear the timestamp after successful verification
             flash("2FA successful. You are now logged in.", "success")
             next_page = request.args.get("next") or url_for("index")
             return redirect(next_page)
