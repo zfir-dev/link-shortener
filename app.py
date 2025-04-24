@@ -63,6 +63,18 @@ def two_factor_required(func):
     def decorated_view(*args, **kwargs):
         if not session.get("two_factor_authenticated", False):
             return redirect(url_for("two_factor"))
+            
+        # Check if OTP has expired
+        otp_generated_at = session.get("otp_generated_at")
+        current_time = datetime.now().timestamp()
+        
+        if not otp_generated_at or (current_time - float(otp_generated_at)) > 10:
+            logout_user()
+            session.pop("two_factor_authenticated", None)
+            session.pop("otp_generated_at", None)
+            flash("Your session has expired. Please log in again.", "error")
+            return redirect(url_for("login"))
+            
         return func(*args, **kwargs)
     return decorated_view
 
@@ -269,7 +281,9 @@ def two_factor():
         totp = pyotp.TOTP(current_user.totp_secret)
         
         otp_generated_at = session.get("otp_generated_at")
-        if not otp_generated_at or (datetime.now().timestamp() - otp_generated_at) > 3600:
+        current_time = datetime.now().timestamp()
+        
+        if not otp_generated_at or (current_time - float(otp_generated_at)) > 3600:
             flash("2FA code has expired. Please log in again.", "error")
             logout_user()
             session.pop("two_factor_authenticated", None)
@@ -278,7 +292,7 @@ def two_factor():
             
         if totp.verify(code):
             session["two_factor_authenticated"] = True
-            session.pop("otp_generated_at", None)
+            session["otp_generated_at"] = current_time
             flash("2FA successful. You are now logged in.", "success")
             next_page = request.args.get("next") or url_for("index")
             return redirect(next_page)
